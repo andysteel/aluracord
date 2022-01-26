@@ -1,44 +1,22 @@
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
+import { useRouter } from 'next/router';
 import { useState } from 'react';
 import appConfig from '../../config.json';
 import Titulo from '../components/Titulo';
 
-const GlobalStyle = () => {
-    return (
-        <style global jsx>{`
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
-            body {
-                font-family: 'Open Sans', sans-serif;
-            }
-
-            /* App fit Height */ 
-            html, body, #__next {
-                min-height: 100vh;
-                display: flex;
-                flex: 1;
-            }
-            #__next {
-                flex: 1;
-            }
-            #__next > * {
-                flex: 1;
-            }
-            /* ./App fit Height */ 
-        `}</style>
-    )
-}
-
 const HomePage = () => {
     const [username, setUsername] = useState('andysteel');
+    const [disableImage, setDisableImage] = useState(false);
+    const roteamento = useRouter();
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      console.log("enviado sem refresh");
+      roteamento.push('/chat')
+    }
 
     return (
         <>
-        <GlobalStyle />
         <Box
           styleSheet={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -85,6 +63,16 @@ const HomePage = () => {
                     backgroundColor: appConfig.theme.colors.neutrals[800],
                   },
                 }}
+                onChange={(e) => {
+
+                  if(e.target.value.length <= 2) {
+                    setDisableImage(true);
+                    setUsername('');
+                  } else {
+                    setDisableImage(false);
+                    setUsername(e.target.value)}
+                  }
+                } 
               />
               <Button
                 type='submit'
@@ -96,6 +84,8 @@ const HomePage = () => {
                   mainColorLight: appConfig.theme.colors.primary[400],
                   mainColorStrong: appConfig.theme.colors.primary[600],
                 }}
+
+                onClick={(e) => handleSubmit(e)}
               />
             </Box>
             {/* Formulário */}
@@ -121,6 +111,7 @@ const HomePage = () => {
                 styleSheet={{
                   borderRadius: '50%',
                   marginBottom: '16px',
+                  display: disableImage ? 'none' : 'block'
                 }}
                 src={`https://github.com/${username}.png`}
               />
@@ -130,7 +121,8 @@ const HomePage = () => {
                   color: appConfig.theme.colors.neutrals[200],
                   backgroundColor: appConfig.theme.colors.neutrals[900],
                   padding: '3px 10px',
-                  borderRadius: '1000px'
+                  borderRadius: '1000px',
+                  display: disableImage ? 'none' : 'block'
                 }}
               >
                 {username}
