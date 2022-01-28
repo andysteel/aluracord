@@ -21,7 +21,13 @@
   },
   "homepage": "https://github.com/andysteel/aluracord#readme",
   "dependencies": {
+    "@chakra-ui/react": "^1.8.1",
+    "@chakra-ui/spinner": "^1.2.1",
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
     "@skynexui/components": "^1.24.0",
+    "@supabase/supabase-js": "^1.29.4",
+    "framer-motion": "^5.6.0",
     "next": "^12.0.8",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"

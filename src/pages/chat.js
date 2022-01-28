@@ -1,22 +1,43 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import appConfig from '../../config.json';
+import { createClient } from '@supabase/supabase-js';
+import { Spinner } from '@chakra-ui/spinner';
+
+const SUPABASE_ANON_KEY = ''
+const SUPABASE_URL = ''
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 export default function ChatPage() {
     const [mensagem, setMensagem] = useState('');
     const [listaDeMensagens, setListaDeMensagens] = useState([]);
 
+    useEffect(() => {
+        supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('id', {ascending: false})
+            .then(({data}) => {
+                setListaDeMensagens(data)
+            })
+    }, [])
+
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
-            id: listaDeMensagens.length + 1,
             de: 'vanessametonini',
             texto: novaMensagem,
         };
 
-        setListaDeMensagens([
-            mensagem,
-            ...listaDeMensagens,
-        ]);
+        supabaseClient
+            .from('mensagens')
+            .insert([mensagem])
+            .then(({data}) => {
+                setListaDeMensagens([
+                    data[0],
+                    ...listaDeMensagens
+                ]);
+            })
+
         setMensagem('');
     }
 
@@ -24,7 +45,7 @@ export default function ChatPage() {
         <Box
             styleSheet={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backgroundColor: appConfig.theme.colors.primary[500],
+                backgroundColor: appConfig.theme.colors.primary['500'],
                 backgroundImage: `url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)`,
                 backgroundRepeat: 'no-repeat', backgroundSize: 'cover', backgroundBlendMode: 'multiply',
                 color: appConfig.theme.colors.neutrals['000']
@@ -37,7 +58,7 @@ export default function ChatPage() {
                     flex: 1,
                     boxShadow: '0 2px 10px 0 rgb(0 0 0 / 20%)',
                     borderRadius: '5px',
-                    backgroundColor: appConfig.theme.colors.neutrals[700],
+                    backgroundColor: appConfig.theme.colors.neutrals['700'],
                     height: '100%',
                     maxWidth: '95%',
                     maxHeight: '95vh',
@@ -51,20 +72,26 @@ export default function ChatPage() {
                         display: 'flex',
                         flex: 1,
                         height: '80%',
-                        backgroundColor: appConfig.theme.colors.neutrals[600],
+                        backgroundColor: appConfig.theme.colors.neutrals['600'],
                         flexDirection: 'column',
                         borderRadius: '5px',
                         padding: '16px',
                     }}
                 >
                     <MessageList mensagens={listaDeMensagens} />
-                    {/* {listaDeMensagens.map((mensagemAtual) => {
-                        return (
-                            <li key={mensagemAtual.id}>
-                                {mensagemAtual.de}: {mensagemAtual.texto}
-                            </li>
-                        )
-                    })} */}
+                    {listaDeMensagens.length === 0 &&
+                        <Box
+                            as="div"
+                            styleSheet={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                margin: '10rem 0 15rem 0'
+                            }}
+                        >
+                            <Spinner thickness='6px' speed='0.65s' emptyColor='gray.200' color='green.500' size='xl'/>
+                        </Box> 
+                    } 
+
                     <Box
                         as="form"
                         styleSheet={{
@@ -91,9 +118,9 @@ export default function ChatPage() {
                                 resize: 'none',
                                 borderRadius: '5px',
                                 padding: '6px 8px',
-                                backgroundColor: appConfig.theme.colors.neutrals[800],
+                                backgroundColor: appConfig.theme.colors.neutrals['800'],
                                 marginRight: '12px',
-                                color: appConfig.theme.colors.neutrals[200],
+                                color: appConfig.theme.colors.neutrals['200'],
                             }}
                         />
                     </Box>
@@ -122,7 +149,7 @@ function Header() {
 }
 
 function MessageList(props) {
-    console.log(props);
+
     return (
         <Box
             tag="ul"
@@ -132,7 +159,7 @@ function MessageList(props) {
                 overflowY: 'hidden',
                 display: 'flex',
                 flexDirection: 'column-reverse',
-                flex: 1,
+                flex: 2,
                 color: appConfig.theme.colors.neutrals["000"],
                 marginBottom: '16px',
             }}
@@ -147,7 +174,7 @@ function MessageList(props) {
                             padding: '6px',
                             marginBottom: '12px',
                             hover: {
-                                backgroundColor: appConfig.theme.colors.neutrals[700],
+                                backgroundColor: appConfig.theme.colors.neutrals['700'],
                             }
                         }}
                     >
@@ -164,7 +191,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${mensagem.de}.png`}
                             />
                             <Text tag="strong">
                                 {mensagem.de}
@@ -173,7 +200,7 @@ function MessageList(props) {
                                 styleSheet={{
                                     fontSize: '10px',
                                     marginLeft: '8px',
-                                    color: appConfig.theme.colors.neutrals[300],
+                                    color: appConfig.theme.colors.neutrals['300'],
                                 }}
                                 tag="span"
                             >

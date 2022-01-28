@@ -1,3 +1,5 @@
+import { ChakraProvider, theme } from '@chakra-ui/react'
+
 const GlobalStyle = () => {
     return (
         <style global jsx>{`
@@ -32,7 +34,9 @@ const App = ({ Component, pageProps}) => {
     return (
     <>
         <GlobalStyle />
-        <Component {...pageProps}/>
+        <ChakraProvider>
+            <Component {...pageProps}/>
+        </ChakraProvider>
     </>
     )
 }
