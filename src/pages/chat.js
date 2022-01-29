@@ -3,16 +3,29 @@ import { useState, useEffect } from 'react';
 import appConfig from '../../config.json';
 import { createClient } from '@supabase/supabase-js';
 import { Spinner } from '@chakra-ui/spinner';
+import { useToast } from '@chakra-ui/react';
+import { useRouter } from 'next/router';
+import { ButtonSendSticker } from '../components/ButtonSendSticker';
 
-const SUPABASE_ANON_KEY = ''
-const SUPABASE_URL = ''
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
-export default function ChatPage() {
+export default function ChatPage(props) {
     const [mensagem, setMensagem] = useState('');
     const [listaDeMensagens, setListaDeMensagens] = useState([]);
+    const roteamento = useRouter();
+    const [usuarioLogado, setUsuarioLogado] = useState(roteamento.query.username);
+    const toast = useToast();
+    const supabaseClient = createClient(props.SUPABASE_URL, props.SUPABASE_ANON_KEY)
+
+    const escutaMensagemEmTempoReal = (adicionaMensagem) => {
+        return supabaseClient
+            .from('mensagens')
+            .on('INSERT', (data) => {
+                adicionaMensagem(data.new)
+            })
+            .subscribe()
+    }
 
     useEffect(() => {
+
         supabaseClient
             .from('mensagens')
             .select('*')
@@ -20,24 +33,44 @@ export default function ChatPage() {
             .then(({data}) => {
                 setListaDeMensagens(data)
             })
+        const subscription = escutaMensagemEmTempoReal((novaMensagem) => {
+            toast({
+                title: 'Nova mensagem',
+                description: `de: ${novaMensagem.de}`,
+                status: 'success',
+                duration: 3000,
+                position: 'top-right',
+                isClosable: true,
+            })
+                setListaDeMensagens((valorAtualDaLista) => {
+                    return [
+                        novaMensagem,
+                        ...valorAtualDaLista
+                    ]
+                });
+        })
+
+        return () => {
+            subscription.unsubscribe();
+        }
     }, [])
 
     function handleNovaMensagem(novaMensagem) {
+        if(!usuarioLogado) {
+            roteamento.push("/");
+            return;
+        }
         const mensagem = {
-            de: 'vanessametonini',
+            de: usuarioLogado,
             texto: novaMensagem,
         };
 
         supabaseClient
             .from('mensagens')
             .insert([mensagem])
-            .then(({data}) => {
-                setListaDeMensagens([
-                    data[0],
-                    ...listaDeMensagens
-                ]);
-            })
-
+            .then(({ data }) => {
+                console.log(data)
+            });
         setMensagem('');
     }
 
@@ -123,11 +156,23 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals['200'],
                             }}
                         />
+                        <ButtonSendSticker onStickerClick={(sticker) => {
+                            handleNovaMensagem(`:sticker:${sticker}`)
+                        }} />
                     </Box>
                 </Box>
             </Box>
         </Box>
     )
+}
+
+export async function getServerSideProps(context) {
+    return {
+      props: {
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+        SUPABASE_URL: process.env.SUPABASE_URL
+      },
+    }
 }
 
 function Header() {
@@ -156,10 +201,9 @@ function MessageList(props) {
             styleSheet={{
                 overflow: 'scroll',
                 overflowX: 'hidden',
-                overflowY: 'hidden',
                 display: 'flex',
                 flexDirection: 'column-reverse',
-                flex: 2,
+                flex: 1,
                 color: appConfig.theme.colors.neutrals["000"],
                 marginBottom: '16px',
             }}
@@ -207,7 +251,17 @@ function MessageList(props) {
                                 {(new Date().toLocaleDateString())}
                             </Text>
                         </Box>
-                        {mensagem.texto}
+                        {mensagem.texto.startsWith(':sticker:')
+                        ? (
+                            <Image 
+                                styleSheet={{
+                                    width: '20%'
+                                }}
+                                src={mensagem.texto.replace(':sticker:','')} 
+                            />
+                        )
+                        : (mensagem.texto)
+                        }
                     </Text>
                 );
             })}
